@@ -1,11 +1,13 @@
 {
   "domain": "enoceanbt",
   "name": "Enoceanbt",
-  "documentation": "https://www.home-assistant.io/components/enocean",
+  "documentation": "https://github.com/Basti-Fantasti/enoceanbt",
+  "issue_tracker": "https://github.com/Basti-Fantasti/enoceanbt/issues",
   "requirements": [
     "enocean==0.40"
   ],
   "dependencies": [],
-  "codeowners": [],
-  "version": "0.0.1"
+  "codeowners": ["@Basti-Fantasti"],
+  "iot_class": "local_push",
+  "version": "0.0.2"
 }

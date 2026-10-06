@@ -3,7 +3,7 @@ import logging
 
 import voluptuous as vol
 
-from homeassistant.const import CONF_DEVICE
+from homeassistant.const import CONF_DEVICE, EVENT_HOMEASSISTANT_STOP
 import homeassistant.helpers.config_validation as cv
 
 # REQUIREMENTS = ['enocean==0.40']
@@ -38,10 +38,13 @@ class EnOceanDongle:
     def __init__(self, hass, ser):
         """Initialize the EnOcean dongle."""
         from enocean.communicators.serialcommunicator import SerialCommunicator
-        self.__communicator = SerialCommunicator(
-            port=ser, callback=self.callback)
-        self.__communicator.start()
+        from .dongle_supervisor import CommunicatorSupervisor
         self.__devices = []
+        self.__supervisor = CommunicatorSupervisor(
+            ser, lambda port: SerialCommunicator(port=port, callback=self.callback))
+        self.__supervisor.start()
+        hass.bus.listen_once(
+            EVENT_HOMEASSISTANT_STOP, lambda event: self.__supervisor.stop())
 
     def register_device(self, dev):
         """Register another device."""
@@ -49,7 +52,7 @@ class EnOceanDongle:
 
     def send_command(self, command):
         """Send a command from the EnOcean dongle."""
-        self.__communicator.send(command)
+        self.__supervisor.send(command)
 
     # pylint: disable=no-self-use
     def _combine_hex(self, data):

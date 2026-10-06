@@ -1,0 +1,11 @@
+{
+  "domain": "enoceanbt",
+  "name": "Enoceanbt",
+  "documentation": "https://www.home-assistant.io/components/enocean",
+  "requirements": [
+    "enocean==0.40"
+  ],
+  "dependencies": [],
+  "codeowners": [],
+  "version": "0.0.1"
+}

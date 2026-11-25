@@ -8,6 +8,12 @@ def test_decode_press_all_buttons():
     assert decode(0xF6, 0x50, 0x30) == RockerAction("BI", True)
     assert decode(0xF6, 0x70, 0x30) == RockerAction("BO", True)
 
+def test_decode_press_without_energy_bow_ignored():
+    assert decode(0xF6, 0x01, 0x30) is None
+
+def test_decode_press_with_invalid_r1_ignored():
+    assert decode(0xF6, 0x90, 0x30) is None
+
 def test_decode_release():
     assert decode(0xF6, 0x00, 0x20) == RockerAction(None, False)
 

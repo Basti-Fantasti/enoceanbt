@@ -10,6 +10,7 @@ BUTTONS = ("AI", "AO", "BI", "BO")  # index = R1 value 0..3
 
 _RORG_RPS = 0xF6
 _NU_BIT = 0x10
+_EB_BIT = 0x10  # energy bow pressed (DATA bit 4)
 
 
 @dataclass(frozen=True)
@@ -23,7 +24,10 @@ def decode(rorg: int, data1: int, status: int) -> RockerAction | None:
     if rorg != _RORG_RPS:
         return None
     if status & _NU_BIT:
-        return RockerAction(BUTTONS[(data1 >> 5) & 0x03], True)
+        r1 = data1 >> 5
+        if r1 > 3 or not data1 & _EB_BIT:
+            return None
+        return RockerAction(BUTTONS[r1], True)
     if data1 == 0x00:
         return RockerAction(None, False)
     return None

@@ -6,6 +6,7 @@ import voluptuous as vol
 
 from homeassistant.const import CONF_DEVICE, EVENT_HOMEASSISTANT_STOP, Platform
 from homeassistant.exceptions import ConfigEntryNotReady
+from homeassistant.helpers import area_registry as ar
 from homeassistant.helpers import device_registry as dr
 import homeassistant.helpers.config_validation as cv
 
@@ -54,13 +55,19 @@ async def async_setup_entry(hass, entry):
     hub.register(entry.data["address"])
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
+    # The area chosen in the teach dialog is applied only once; afterwards
+    # it is dropped from entry.data so later user changes are not overridden.
     area_id = entry.data.get("area_id")
     if area_id:
         dev_reg = dr.async_get(hass)
         device = dev_reg.async_get_device(
             identifiers={(DOMAIN, f"{entry.data['address']:08X}")})
-        if device is not None and device.area_id is None:
-            dev_reg.async_update_device(device.id, area_id=area_id)
+        if device is not None:
+            if (device.area_id is None
+                    and ar.async_get(hass).async_get_area(area_id) is not None):
+                dev_reg.async_update_device(device.id, area_id=area_id)
+            hass.config_entries.async_update_entry(
+                entry, data={**entry.data, "area_id": None})
     return True
 
 
@@ -123,13 +130,17 @@ class EnOceanDongle:
         from enocean.protocol.packet import RadioPacket
         if isinstance(temp, RadioPacket):
             if temp.data[0] == 0xF6:
-                hub = self._hass.data[DOMAIN]["hub"]
+                # Rocker forward must never break the legacy chain below.
                 try:
-                    self._hass.loop.call_soon_threadsafe(
-                        hub.handle_raw, temp.sender_int, temp.data[1],
-                        temp.data[6], time.monotonic())
-                except RuntimeError:
-                    pass  # event loop closed during shutdown
+                    hub = self._hass.data[DOMAIN]["hub"]
+                    try:
+                        self._hass.loop.call_soon_threadsafe(
+                            hub.handle_raw, temp.sender_int, temp.data[1],
+                            temp.data[6], time.monotonic())
+                    except RuntimeError:
+                        pass  # event loop closed during shutdown
+                except Exception:  # pylint: disable=broad-except
+                    _LOGGER.exception("Forwarding F6 telegram to rocker hub failed")
             _LOGGER.debug("Received freaking radio packet: %s", temp)
             rxtype = None
             value = None

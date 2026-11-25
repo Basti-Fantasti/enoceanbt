@@ -18,6 +18,10 @@
         "title": "Kein Taster erkannt",
         "description": "Kein Taster erkannt. Absenden, um es erneut zu versuchen."
       },
+      "timeout_second": {
+        "title": "Zweite Taste nicht gedrückt",
+        "description": "Taster {address} erkannt, aber die zweite Taste (**{target}**) wurde nicht gedrückt. Absenden, um es erneut zu versuchen."
+      },
       "pick": {
         "title": "Taster auswählen",
         "description": "Es wurden mehrere Sender empfangen. Bitte den gedrückten Taster auswählen.",
@@ -48,7 +52,8 @@
     },
     "abort": {
       "not_connected": "Der EnOcean-Stick ist nicht verbunden oder `enoceanbt` ist nicht in der configuration.yaml eingerichtet.",
-      "already_configured": "Dieser Taster ist bereits eingelernt."
+      "already_configured": "Dieser Taster ist bereits eingelernt.",
+      "already_in_progress": "Für diesen Taster läuft bereits ein Einlernvorgang."
     }
   },
   "selector": {

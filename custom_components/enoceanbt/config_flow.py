@@ -55,7 +55,7 @@ class EnOceanBtConfigFlow(ConfigFlow, domain=DOMAIN):
         self._first_button: str | None = None
         self._mapping: dict | None = None
         self._mapping_error: str = "wrong_pair"
-        self._retry_step: str = "listen_first"
+        self._disconnected: bool = False
 
     # -- helpers -----------------------------------------------------------
 
@@ -67,20 +67,31 @@ class EnOceanBtConfigFlow(ConfigFlow, domain=DOMAIN):
         lang = (self.hass.config.language or "en").split("-")[0]
         return _TEXTS.get(lang, _TEXTS["en"])
 
-    async def _listen(
-        self, collector: TeachCollector, exclude: set[int] | None = None
-    ) -> None:
-        """Feed rocker actions into the collector until ready or timeout."""
-        exclude = exclude or set()
+    def _known_addresses(self) -> set[int]:
+        """Addresses of rockers that already have a config entry."""
+        known = set()
+        for uid in self._async_current_ids():
+            try:
+                known.add(int(uid, 16))
+            except (TypeError, ValueError):
+                pass
+        return known
 
-        def _on_action(sender, action, t) -> None:
-            if sender not in exclude:
-                collector.feed(sender, action, t)
+    def _hub_connected(self) -> bool:
+        hub = self._hub
+        return hub is not None and hub.connected
 
-        remove = self._hub.add_teach_listener(_on_action)
+    async def _listen(self, collector: TeachCollector) -> None:
+        """Feed rocker actions into the collector until ready, timeout or
+        loss of the stick (sets ``self._disconnected``)."""
+        self._disconnected = False
+        remove = self._hub.add_teach_listener(collector.feed)
         try:
             deadline = time.monotonic() + LISTEN_TIMEOUT_S
             while time.monotonic() < deadline:
+                if not self._hub.connected:
+                    self._disconnected = True
+                    return
                 if collector.ready(time.monotonic()):
                     return
                 await asyncio.sleep(POLL_INTERVAL_S)
@@ -102,8 +113,7 @@ class EnOceanBtConfigFlow(ConfigFlow, domain=DOMAIN):
     async def async_step_user(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
-        hub = self._hub
-        if hub is None or not hub.connected:
+        if not self._hub_connected():
             return self.async_abort(reason="not_connected")
         if user_input is not None:
             self._layout = user_input["layout"]
@@ -127,16 +137,10 @@ class EnOceanBtConfigFlow(ConfigFlow, domain=DOMAIN):
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
         if self._task is None:
+            # Already-taught senders are NOT filtered out: re-teaching a known
+            # rocker must reach pick/unique_id and abort already_configured.
             self._first = TeachCollector()
-            exclude = set()
-            for uid in self._async_current_ids():
-                try:
-                    exclude.add(int(uid, 16))
-                except (TypeError, ValueError):
-                    pass
-            self._task = self.hass.async_create_task(
-                self._listen(self._first, exclude)
-            )
+            self._task = self.hass.async_create_task(self._listen(self._first))
         if not self._task.done():
             return self.async_show_progress(
                 step_id="listen_first",
@@ -147,19 +151,44 @@ class EnOceanBtConfigFlow(ConfigFlow, domain=DOMAIN):
                 },
             )
         await self._finish_task()
+        if self._disconnected:
+            return self.async_show_progress_done(next_step_id="not_connected")
         if self._first.preselect() is None:
-            self._retry_step = "listen_first"
             return self.async_show_progress_done(next_step_id="timeout")
         return self.async_show_progress_done(next_step_id="pick")
+
+    async def async_step_not_connected(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Stick lost while listening."""
+        return self.async_abort(reason="not_connected")
 
     async def async_step_timeout(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
+        """No rocker detected in the first step."""
         if user_input is not None:
-            if self._retry_step == "listen_second":
-                return await self.async_step_listen_second()
+            if not self._hub_connected():
+                return self.async_abort(reason="not_connected")
             return await self.async_step_listen_first()
         return self.async_show_form(step_id="timeout", data_schema=vol.Schema({}))
+
+    async def async_step_timeout_second(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Rocker known, but the second key was not pressed in time."""
+        if user_input is not None:
+            if not self._hub_connected():
+                return self.async_abort(reason="not_connected")
+            return await self.async_step_listen_second()
+        return self.async_show_form(
+            step_id="timeout_second",
+            data_schema=vol.Schema({}),
+            description_placeholders={
+                "address": _fmt(self._address),
+                "target": self._texts()["second"][self._layout],
+            },
+        )
 
     async def async_step_pick(
         self, user_input: dict[str, Any] | None = None
@@ -181,7 +210,7 @@ class EnOceanBtConfigFlow(ConfigFlow, domain=DOMAIN):
                 )
                 for c in candidates
             ]
-            default = self._first.preselect()
+            default = self._first.preselect(known=self._known_addresses())
             return self.async_show_form(
                 step_id="pick",
                 data_schema=vol.Schema(
@@ -219,10 +248,11 @@ class EnOceanBtConfigFlow(ConfigFlow, domain=DOMAIN):
                 },
             )
         await self._finish_task()
+        if self._disconnected:
+            return self.async_show_progress_done(next_step_id="not_connected")
         cand = self._second.preselect()
         if cand is None:
-            self._retry_step = "listen_second"
-            return self.async_show_progress_done(next_step_id="timeout")
+            return self.async_show_progress_done(next_step_id="timeout_second")
         try:
             self._mapping = derive_mapping(
                 self._layout, self._first_button, cand.button
@@ -236,6 +266,8 @@ class EnOceanBtConfigFlow(ConfigFlow, domain=DOMAIN):
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
         if user_input is not None:
+            if not self._hub_connected():
+                return self.async_abort(reason="not_connected")
             return await self.async_step_listen_second()
         return self.async_show_form(
             step_id="wrong_second",
@@ -269,7 +301,7 @@ class EnOceanBtConfigFlow(ConfigFlow, domain=DOMAIN):
             step_id="confirm",
             data_schema=vol.Schema(
                 {
-                    vol.Required("name"): str,
+                    vol.Required("name"): vol.All(str, vol.Length(min=1)),
                     vol.Optional("area_id"): selector.AreaSelector(),
                 }
             ),

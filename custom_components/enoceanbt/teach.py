@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Collection
 
 if TYPE_CHECKING:  # annotation only; keeps the module importable both
     from .rocker import RockerAction  # in the HA package and in tests
@@ -55,8 +55,10 @@ class TeachCollector:
             self._cands.values(), key=lambda c: (not c.released, -c.last_press)
         )
 
-    def preselect(self) -> Candidate | None:
-        for c in self.candidates():
-            if c.released:
+    def preselect(self, known: Collection[int] = ()) -> Candidate | None:
+        """Best released candidate; senders in ``known`` (already taught) last."""
+        released = [c for c in self.candidates() if c.released]
+        for c in released:
+            if c.sender not in known:
                 return c
-        return None
+        return released[0] if released else None

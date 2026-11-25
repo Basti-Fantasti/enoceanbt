@@ -38,3 +38,17 @@ def test_release_before_any_press_ignored():
     c = TeachCollector()
     c.feed(0x0031E010, R, 1.0)
     assert c.candidates() == []
+
+
+def test_preselect_prefers_untaught_rocker():
+    c = TeachCollector()
+    c.feed(0x0031D020, P("AO"), 1.0); c.feed(0x0031D020, R, 1.1)   # known
+    c.feed(0x0031E010, P("AI"), 0.5); c.feed(0x0031E010, R, 0.6)   # new
+    assert c.preselect().sender == 0x0031D020
+    assert c.preselect(known={0x0031D020}).sender == 0x0031E010
+
+
+def test_preselect_falls_back_to_known_rocker():
+    c = TeachCollector()
+    c.feed(0x0031D020, P("AO"), 1.0); c.feed(0x0031D020, R, 1.1)
+    assert c.preselect(known={0x0031D020}).sender == 0x0031D020

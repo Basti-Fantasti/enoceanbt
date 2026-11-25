@@ -18,6 +18,10 @@
         "title": "No rocker detected",
         "description": "No rocker switch detected. Submit to try again."
       },
+      "timeout_second": {
+        "title": "Second key not pressed",
+        "description": "Rocker {address} detected, but the second key (**{target}**) was not pressed. Submit to try again."
+      },
       "pick": {
         "title": "Select rocker",
         "description": "Several senders were received. Select the rocker switch you pressed.",
@@ -48,7 +52,8 @@
     },
     "abort": {
       "not_connected": "The EnOcean stick is not connected or `enoceanbt` is not set up in configuration.yaml.",
-      "already_configured": "This rocker switch has already been taught."
+      "already_configured": "This rocker switch has already been taught.",
+      "already_in_progress": "A teach-in for this rocker switch is already in progress."
     }
   },
   "selector": {

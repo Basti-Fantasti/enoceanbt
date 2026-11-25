@@ -60,8 +60,8 @@ async def async_setup_entry(hass, entry):
     area_id = entry.data.get("area_id")
     if area_id:
         dev_reg = dr.async_get(hass)
-        device = dev_reg.async_get_device(
-            identifiers={(DOMAIN, f"{entry.data['address']:08X}")})
+        devices = dr.async_entries_for_config_entry(dev_reg, entry.entry_id)
+        device = devices[0] if devices else None
         if device is not None:
             if (device.area_id is None
                     and ar.async_get(hass).async_get_area(area_id) is not None):

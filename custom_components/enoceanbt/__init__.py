@@ -1,10 +1,15 @@
 """Support for EnOcean devices."""
 import logging
+import time
 
 import voluptuous as vol
 
-from homeassistant.const import CONF_DEVICE, EVENT_HOMEASSISTANT_STOP
+from homeassistant.const import CONF_DEVICE, EVENT_HOMEASSISTANT_STOP, Platform
+from homeassistant.exceptions import ConfigEntryNotReady
+from homeassistant.helpers import device_registry as dr
 import homeassistant.helpers.config_validation as cv
+
+from .hub import RockerHub
 
 # REQUIREMENTS = ['enocean==0.40']
 
@@ -13,6 +18,8 @@ _LOGGER = logging.getLogger(__name__)
 DOMAIN = 'enoceanbt'
 
 ENOCEAN_DONGLE = None
+
+PLATFORMS = [Platform.EVENT]
 
 CONFIG_SCHEMA = vol.Schema({
     DOMAIN: vol.Schema({
@@ -27,9 +34,38 @@ def setup(hass, config):
 
     serial_dev = config[DOMAIN].get(CONF_DEVICE)
 
+    hass.data[DOMAIN] = {"hub": RockerHub(hass, lambda: ENOCEAN_DONGLE)}
+
     ENOCEAN_DONGLE = EnOceanDongle(hass, serial_dev)
 
     return True
+
+
+async def async_setup_entry(hass, entry):
+    """Set up one taught rocker switch from a config entry."""
+    if DOMAIN not in hass.data:
+        raise ConfigEntryNotReady("enoceanbt YAML setup has not run yet")
+    hub = hass.data[DOMAIN]["hub"]
+    hub.register(entry.data["address"])
+    await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+
+    area_id = entry.data.get("area_id")
+    if area_id:
+        dev_reg = dr.async_get(hass)
+        device = dev_reg.async_get_device(
+            identifiers={(DOMAIN, f"{entry.data['address']:08X}")})
+        if device is not None and device.area_id is None:
+            dev_reg.async_update_device(device.id, area_id=area_id)
+    return True
+
+
+async def async_unload_entry(hass, entry):
+    """Unload a rocker switch config entry."""
+    unload_ok = await hass.config_entries.async_unload_platforms(
+        entry, PLATFORMS)
+    if unload_ok and DOMAIN in hass.data:
+        hass.data[DOMAIN]["hub"].unregister(entry.data["address"])
+    return unload_ok
 
 
 class EnOceanDongle:
@@ -39,12 +75,23 @@ class EnOceanDongle:
         """Initialize the EnOcean dongle."""
         from enocean.communicators.serialcommunicator import SerialCommunicator
         from .dongle_supervisor import CommunicatorSupervisor
+        self._hass = hass
         self.__devices = []
         self.__supervisor = CommunicatorSupervisor(
             ser, lambda port: SerialCommunicator(port=port, callback=self.callback))
         self.__supervisor.start()
         hass.bus.listen_once(
             EVENT_HOMEASSISTANT_STOP, lambda event: self.__supervisor.stop())
+
+    @property
+    def devices(self):
+        """Registered YAML devices."""
+        return self.__devices
+
+    @property
+    def connected(self):
+        """True if the serial communicator is connected."""
+        return self.__supervisor.state == "connected"
 
     def register_device(self, dev):
         """Register another device."""
@@ -70,6 +117,11 @@ class EnOceanDongle:
         """
         from enocean.protocol.packet import RadioPacket
         if isinstance(temp, RadioPacket):
+            if temp.data[0] == 0xF6:
+                hub = self._hass.data[DOMAIN]["hub"]
+                self._hass.loop.call_soon_threadsafe(
+                    hub.handle_raw, temp.sender_int, temp.data[1],
+                    temp.data[6], time.monotonic())
             _LOGGER.debug("Received freaking radio packet: %s", temp)
             rxtype = None
             value = None

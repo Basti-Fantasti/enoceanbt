@@ -79,7 +79,7 @@ def derive_mapping(layout: str, first: str, second: str) -> dict:
         raise MappingError("same_button")
     up = first[1]
     if layout == "2x2":
-        if first[0] == second[0]:
+        if first[0] == second[0] or first[1] == second[1]:
             raise MappingError("wrong_pair")
         return {
             "layout": "2x2",
@@ -98,7 +98,9 @@ def derive_mapping(layout: str, first: str, second: str) -> dict:
 def keys_for_layout(layout: str) -> tuple[str, ...]:
     if layout == "2x2":
         return ("left_up", "left_down", "right_up", "right_down")
-    return ("up", "down")
+    if layout == "1x2":
+        return ("up", "down")
+    raise ValueError(f"unknown layout {layout!r}")
 
 
 def key_for(mapping: dict, button: str) -> str | None:

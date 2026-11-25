@@ -71,3 +71,16 @@ def test_key_for():
 
 def test_keys_for_layout():
     assert keys_for_layout("1x2") == ("up", "down")
+
+def test_derive_mapping_2x2_rejects_same_direction():
+    with pytest.raises(MappingError) as e: derive_mapping("2x2", "AI", "BI")
+    assert e.value.reason == "wrong_pair"
+
+def test_keys_for_layout_2x2_and_unknown():
+    assert keys_for_layout("2x2") == ("left_up", "left_down", "right_up", "right_down")
+    with pytest.raises(ValueError): keys_for_layout("3x3")
+
+def test_same_button_after_repeat_window_gives_new_press():
+    tr = RockerTracker()
+    tr.handle(RockerAction("AI", True), 0.0)
+    assert tr.handle(RockerAction("AI", True), 1.0) == [RockerEvent("AI", "press", None)]

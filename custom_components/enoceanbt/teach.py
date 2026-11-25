@@ -2,8 +2,10 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import TYPE_CHECKING
 
-from rocker import RockerAction
+if TYPE_CHECKING:  # annotation only; keeps the module importable both
+    from .rocker import RockerAction  # in the HA package and in tests
 
 
 @dataclass

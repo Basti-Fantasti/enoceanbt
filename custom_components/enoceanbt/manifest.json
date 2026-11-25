@@ -1,6 +1,6 @@
 {
   "domain": "enoceanbt",
-  "name": "Enoceanbt",
+  "name": "EnOcean BT",
   "documentation": "https://github.com/Basti-Fantasti/enoceanbt",
   "issue_tracker": "https://github.com/Basti-Fantasti/enoceanbt/issues",
   "requirements": [
@@ -9,5 +9,6 @@
   "dependencies": [],
   "codeowners": ["@Basti-Fantasti"],
   "iot_class": "local_push",
-  "version": "0.1.0"
+  "config_flow": true,
+  "version": "0.2.0"
 }

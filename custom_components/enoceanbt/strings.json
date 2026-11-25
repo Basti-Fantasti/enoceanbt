@@ -1,0 +1,143 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Teach EnOcean rocker switch",
+        "description": "Choose the rocker type. Afterwards you will press two of its keys.",
+        "data": {
+          "layout": "Rocker type"
+        }
+      },
+      "listen_first": {
+        "title": "Press a key"
+      },
+      "listen_second": {
+        "title": "Press a key"
+      },
+      "timeout": {
+        "title": "No rocker detected",
+        "description": "No rocker switch detected. Submit to try again."
+      },
+      "timeout_second": {
+        "title": "Second key not pressed",
+        "description": "Rocker {address} detected, but the second key (**{target}**) was not pressed. Submit to try again."
+      },
+      "pick": {
+        "title": "Select rocker",
+        "description": "Several senders were received. Select the rocker switch you pressed.",
+        "data": {
+          "address": "Address"
+        }
+      },
+      "wrong_second": {
+        "title": "Wrong key",
+        "description": "Submit and press the **{target}** key again."
+      },
+      "confirm": {
+        "title": "Rocker detected",
+        "description": "Address: {address}{actor_users}",
+        "data": {
+          "name": "Name",
+          "area_id": "Area"
+        }
+      }
+    },
+    "progress": {
+      "press_first": "Press the **{target}** key now. (Listening for up to 30 s.)",
+      "press_second": "Press the **{target}** key now. (Listening for up to 30 s.)"
+    },
+    "error": {
+      "same_button": "That was the same key as before - please press the opposite one.",
+      "wrong_pair": "That was not the opposite key - please press again."
+    },
+    "abort": {
+      "not_connected": "The EnOcean stick is not connected or `enoceanbt` is not set up in configuration.yaml.",
+      "already_configured": "This rocker switch has already been taught.",
+      "already_in_progress": "A teach-in for this rocker switch is already in progress."
+    }
+  },
+  "selector": {
+    "layout": {
+      "options": {
+        "1x2": "Single rocker (top/bottom)",
+        "2x2": "Double rocker (left/right, each top/bottom)"
+      }
+    }
+  },
+  "entity": {
+    "event": {
+      "left_up": {
+        "name": "Top left",
+        "state_attributes": {
+          "event_type": {
+            "state": {
+              "press": "Pressed",
+              "short_release": "Short release",
+              "long_release": "Long release"
+            }
+          }
+        }
+      },
+      "left_down": {
+        "name": "Bottom left",
+        "state_attributes": {
+          "event_type": {
+            "state": {
+              "press": "Pressed",
+              "short_release": "Short release",
+              "long_release": "Long release"
+            }
+          }
+        }
+      },
+      "right_up": {
+        "name": "Top right",
+        "state_attributes": {
+          "event_type": {
+            "state": {
+              "press": "Pressed",
+              "short_release": "Short release",
+              "long_release": "Long release"
+            }
+          }
+        }
+      },
+      "right_down": {
+        "name": "Bottom right",
+        "state_attributes": {
+          "event_type": {
+            "state": {
+              "press": "Pressed",
+              "short_release": "Short release",
+              "long_release": "Long release"
+            }
+          }
+        }
+      },
+      "up": {
+        "name": "Top",
+        "state_attributes": {
+          "event_type": {
+            "state": {
+              "press": "Pressed",
+              "short_release": "Short release",
+              "long_release": "Long release"
+            }
+          }
+        }
+      },
+      "down": {
+        "name": "Bottom",
+        "state_attributes": {
+          "event_type": {
+            "state": {
+              "press": "Pressed",
+              "short_release": "Short release",
+              "long_release": "Long release"
+            }
+          }
+        }
+      }
+    }
+  }
+}

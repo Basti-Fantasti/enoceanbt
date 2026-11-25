@@ -1,0 +1,143 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "EnOcean-Taster einlernen",
+        "description": "Bauform des Tasters wählen. Danach werden zwei seiner Tasten gedrückt.",
+        "data": {
+          "layout": "Bauform"
+        }
+      },
+      "listen_first": {
+        "title": "Taste drücken"
+      },
+      "listen_second": {
+        "title": "Taste drücken"
+      },
+      "timeout": {
+        "title": "Kein Taster erkannt",
+        "description": "Kein Taster erkannt. Absenden, um es erneut zu versuchen."
+      },
+      "timeout_second": {
+        "title": "Zweite Taste nicht gedrückt",
+        "description": "Taster {address} erkannt, aber die zweite Taste (**{target}**) wurde nicht gedrückt. Absenden, um es erneut zu versuchen."
+      },
+      "pick": {
+        "title": "Taster auswählen",
+        "description": "Es wurden mehrere Sender empfangen. Bitte den gedrückten Taster auswählen.",
+        "data": {
+          "address": "Adresse"
+        }
+      },
+      "wrong_second": {
+        "title": "Falsche Taste",
+        "description": "Absenden und dann die Taste **{target}** erneut drücken."
+      },
+      "confirm": {
+        "title": "Taster erkannt",
+        "description": "Adresse: {address}{actor_users}",
+        "data": {
+          "name": "Name",
+          "area_id": "Bereich"
+        }
+      }
+    },
+    "progress": {
+      "press_first": "Drücke jetzt die Taste **{target}**. (Es wird bis zu 30 s mitgehört.)",
+      "press_second": "Drücke jetzt die Taste **{target}**. (Es wird bis zu 30 s mitgehört.)"
+    },
+    "error": {
+      "same_button": "Das war dieselbe Taste wie eben – bitte die gegenüberliegende drücken.",
+      "wrong_pair": "Das war nicht die gegenüberliegende Taste – bitte erneut drücken."
+    },
+    "abort": {
+      "not_connected": "Der EnOcean-Stick ist nicht verbunden oder `enoceanbt` ist nicht in der configuration.yaml eingerichtet.",
+      "already_configured": "Dieser Taster ist bereits eingelernt.",
+      "already_in_progress": "Für diesen Taster läuft bereits ein Einlernvorgang."
+    }
+  },
+  "selector": {
+    "layout": {
+      "options": {
+        "1x2": "Einfachwippe (oben/unten)",
+        "2x2": "Doppelwippe (links/rechts, je oben/unten)"
+      }
+    }
+  },
+  "entity": {
+    "event": {
+      "left_up": {
+        "name": "Links oben",
+        "state_attributes": {
+          "event_type": {
+            "state": {
+              "press": "Gedrückt",
+              "short_release": "Kurz losgelassen",
+              "long_release": "Lang losgelassen"
+            }
+          }
+        }
+      },
+      "left_down": {
+        "name": "Links unten",
+        "state_attributes": {
+          "event_type": {
+            "state": {
+              "press": "Gedrückt",
+              "short_release": "Kurz losgelassen",
+              "long_release": "Lang losgelassen"
+            }
+          }
+        }
+      },
+      "right_up": {
+        "name": "Rechts oben",
+        "state_attributes": {
+          "event_type": {
+            "state": {
+              "press": "Gedrückt",
+              "short_release": "Kurz losgelassen",
+              "long_release": "Lang losgelassen"
+            }
+          }
+        }
+      },
+      "right_down": {
+        "name": "Rechts unten",
+        "state_attributes": {
+          "event_type": {
+            "state": {
+              "press": "Gedrückt",
+              "short_release": "Kurz losgelassen",
+              "long_release": "Lang losgelassen"
+            }
+          }
+        }
+      },
+      "up": {
+        "name": "Oben",
+        "state_attributes": {
+          "event_type": {
+            "state": {
+              "press": "Gedrückt",
+              "short_release": "Kurz losgelassen",
+              "long_release": "Lang losgelassen"
+            }
+          }
+        }
+      },
+      "down": {
+        "name": "Unten",
+        "state_attributes": {
+          "event_type": {
+            "state": {
+              "press": "Gedrückt",
+              "short_release": "Kurz losgelassen",
+              "long_release": "Lang losgelassen"
+            }
+          }
+        }
+      }
+    }
+  }
+}

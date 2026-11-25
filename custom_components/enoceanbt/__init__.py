@@ -32,9 +32,14 @@ def setup(hass, config):
     """Set up the EnOcean component."""
     global ENOCEAN_DONGLE
 
-    serial_dev = config[DOMAIN].get(CONF_DEVICE)
-
+    # Hub first, so config entries can load (hub.connected is False) even
+    # without a YAML block.
     hass.data[DOMAIN] = {"hub": RockerHub(hass, lambda: ENOCEAN_DONGLE)}
+
+    if DOMAIN not in config:
+        return True
+
+    serial_dev = config[DOMAIN].get(CONF_DEVICE)
 
     ENOCEAN_DONGLE = EnOceanDongle(hass, serial_dev)
 
@@ -119,9 +124,12 @@ class EnOceanDongle:
         if isinstance(temp, RadioPacket):
             if temp.data[0] == 0xF6:
                 hub = self._hass.data[DOMAIN]["hub"]
-                self._hass.loop.call_soon_threadsafe(
-                    hub.handle_raw, temp.sender_int, temp.data[1],
-                    temp.data[6], time.monotonic())
+                try:
+                    self._hass.loop.call_soon_threadsafe(
+                        hub.handle_raw, temp.sender_int, temp.data[1],
+                        temp.data[6], time.monotonic())
+                except RuntimeError:
+                    pass  # event loop closed during shutdown
             _LOGGER.debug("Received freaking radio packet: %s", temp)
             rxtype = None
             value = None
